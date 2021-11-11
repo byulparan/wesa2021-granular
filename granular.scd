@@ -33,14 +33,14 @@ s.boot;  // 서버 부팅
 
 (// Saw
 {
-	Pan2.ar(Saw.ar(440, 0, 0.2));
+	Pan2.ar(Saw.ar(440,  0.2));
 }.play;
 )
 
 
 (// Pulse
 {
-	Pan2.ar(Pulse.ar(440, 0.5 0.2));
+	Pan2.ar(Pulse.ar(440, 0.5, 0.2));
 }.play;
 )
 
@@ -100,6 +100,16 @@ Routine{
 )
 
 
+(
+Tdef(\sequence,{
+	inf.do{
+		Synth(\sinewave, [freq: [48, 55 ,60, 71, 74].choose.midicps]);
+		1.0.wait;
+	}
+}).play;
+)
+
+
 
 
 // ====================================================================================
@@ -120,7 +130,7 @@ Routine{
 
 (
 {
-	PlayBuf.ar(b.numChannels, ~drum, 1);
+	Pan2.ar(PlayBuf.ar(1, ~drum, 1));
 }.play;
 )
 
@@ -132,19 +142,20 @@ Routine{
 
 (
 SynthDef(\sample, {|buffer = 0, rate = 1, dur = 1, start = 0|
-	var sig = PlayBuf.ar(1, buffer, rate, 1, start*44100);
+	var sig = PlayBuf.ar(1, buffer, rate, 1, start*44100,1);
+	var env = EnvGen.kr(Env.new([0,1,0],dur*[0.5,0.5]));
 	Line.kr(0,0,dur,doneAction:2);
 	Out.ar(0, Pan2.ar(sig));
 }).send;
 )
 
 (
-Routine{
+Tdef(\granule, {
 	inf.do{
-		Synth(\sample, [buffer: ~drum, dur: 0.125, start: 0]);
+		Synth(\sample, [buffer: ~piano,dur:1,start:0.rrand(4)]);
 		0.125.wait;
 	}
-}.play;
+}).play;
 )
 
 
@@ -176,8 +187,8 @@ var synth;
 
 synth = {
 	var centerpos = LFNoise1.kr(1).range(0,4);
-	SendReply.kr(Impulse.kr(30), '/setPos', centerpos);
-	TGrains.ar(2, Impulse.ar(1), buf, 1, centerpos, 0.1, 0.0, 0.1);
+	SendReply.kr(Impulse.kr(30), '/setPos', centerpos % BufDur.kr(buf));
+	TGrains.ar(2, Impulse.ar(8), buf, 1, centerpos, 0.1,0.0, 0.1);
 }.play;
 
 
@@ -222,11 +233,13 @@ w.onClose_({synth.free;});
 
 ~record.plot;
 
+{Pan2.ar(PlayBuf.ar(1, ~record, 1, loop:1))}.play;
+
 
 // Granular
 (
 {
-	TGrains.ar(2, Impulse.kr(1), b, 1, 0.0, 0.1, 0.0, 0.1);
+	TGrains.ar(2, Impulse.kr(16), ~record, 1, LFNoise0.kr(1).range(0,4), 0.1, 0.0, 0.1);
 }.play;
 )
 
